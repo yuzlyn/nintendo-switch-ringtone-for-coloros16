@@ -1,0 +1,13 @@
+# 脚本必须在设备上保持 LF，否则 sh 会报错
+* text=auto eol=lf
+
+*.sh    text eol=lf
+*.prop  text eol=lf
+*.md    text eol=lf
+*.py    text eol=lf
+*.ps1   text eol=crlf
+
+*.ogg   binary
+*.mp3   binary
+*.wav   binary
+*.zip   binary

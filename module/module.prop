@@ -1,0 +1,6 @@
+id=ns-ringtone
+name=Nintendo Switch 音效
+version=v1.0
+versionCode=1
+author=yuzlyn
+description=把整套系统音效替换为 Nintendo Switch 音效：开机/关机、锁屏/解锁、按键、充电、通知、铃声、闹钟、天气提醒。基于官方提取的 211 个 Switch 系统音效。
