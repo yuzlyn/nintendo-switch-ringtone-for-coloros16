@@ -11,7 +11,7 @@ log "=== ns-ringtone mount start ==="
 # result is a completely silent phone. Force the label the stock files use.
 chcon -R u:object_r:system_file:s0 "$FILES" 2>/dev/null
 
-# bind every replacement file over its original; the originals stay untouched
+# Bind every replacement file over its original. The originals stay untouched
 # underneath, so removing the module fully restores the stock sounds.
 bind_dir() {
   _src="$1"
@@ -42,15 +42,9 @@ bind_dir() {
 
 bind_dir "$FILES/product_ui"    /product/media/audio/ui
 bind_dir "$FILES/mystock_ui"    /my_stock/media/audio/ui
-
-bind_dir "$FILES/oplus_ui"      /data/oplus/multimedia/ui
-bind_dir "$FILES/ringtones"     /data/oplus/multimedia/ringtones
 bind_dir "$FILES/notifications" /data/oplus/multimedia/notifications
-bind_dir "$FILES/alarms"        /my_stock/media/audio/alarms
 
-# the /data/oplus media dirs have their own label in file_contexts
-restorecon -R /data/oplus/multimedia/ui 2>/dev/null
-restorecon -R /data/oplus/multimedia/ringtones 2>/dev/null
+# the /data/oplus media dir has its own label in file_contexts
 restorecon -R /data/oplus/multimedia/notifications 2>/dev/null
 
 log "labels: $(ls -Z /product/media/audio/ui/KeypressStandard.ogg 2>/dev/null | awk '{print $1}')"

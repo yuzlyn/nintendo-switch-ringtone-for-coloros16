@@ -2,7 +2,10 @@
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $src  = Join-Path $root "module"
-$out  = Join-Path $root "NS-Ringtone-v1.0.zip"
+
+# version comes from module.prop so the zip name can never drift
+$ver = (Select-String -Path (Join-Path $src "module.prop") -Pattern '^version=(.+)$').Matches[0].Groups[1].Value
+$out = Join-Path $root "NS-Ringtone-$ver.zip"
 
 if (Test-Path $out) { Remove-Item $out -Force }
 
