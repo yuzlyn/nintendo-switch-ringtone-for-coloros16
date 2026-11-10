@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Nintendo Switch 音效</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="assets/fonts/fonts.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      /* Only what the shared design layer does not already provide. Everything
+         else (colours, type ramp, list, switch, sheet, chips) comes from
+         styles.css so this page stays visually identical to the other modules. */
+      html, body { margin: 0; min-height: 100%; }
+      body { background: var(--md-sys-color-background); color: var(--md-sys-color-on-background); }
+      /* .app-surface already pins itself to 100vh with overflow:hidden, so the
+         scroll area has to live inside it; otherwise the list is clipped and
+         the page cannot be dragged at all. */
+      .ns-bar {
+        display: flex; align-items: center; gap: var(--sp-3);
+        flex: 0 0 auto;
+        padding: var(--sp-5) var(--app-gutter) var(--sp-3);
+        background: var(--md-sys-color-background);
+      }
+      .ns-bar h1 { margin: 0; flex: 1; font-size: 22px; line-height: 28px; font-weight: 500; }
+      .ns-bar .sub { display: block; font-size: 12px; color: var(--md-sys-color-on-surface-variant); font-weight: 400; }
+      .ns-main {
+        flex: 1 1 auto; min-height: 0;
+        overflow-y: auto; overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+        padding: 0 var(--app-gutter) 96px;
+        display: flex; flex-direction: column; gap: var(--sp-4);
+      }
+      .ns-text-button {
+        border: 0; background: transparent; color: var(--md-sys-color-primary);
+        font: inherit; font-size: 14px; font-weight: 500; padding: var(--sp-2) var(--sp-3);
+        border-radius: var(--md-sys-shape-full); cursor: pointer;
+      }
+      .ns-text-button:disabled { color: var(--md-sys-color-outline); cursor: default; }
+      .ns-stats { display: flex; gap: var(--sp-4); padding: var(--sp-2) 0; }
+      .ns-stat { flex: 1; }
+      .ns-stat .n { font-size: 26px; font-weight: 500; line-height: 32px; }
+      .ns-stat .k { font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+      .ns-group-title {
+        font-size: 13px; font-weight: 500; letter-spacing: .01em;
+        color: var(--md-sys-color-on-surface-variant);
+        padding: var(--sp-2) var(--sp-2) 0;
+      }
+      .ns-item { cursor: pointer; gap: var(--sp-3); }
+      .ns-item[data-off="true"] .list-body { opacity: .5; }
+      .ns-sheet-search {
+        width: 100%; box-sizing: border-box; margin-bottom: var(--sp-3);
+        padding: var(--sp-3) var(--sp-4); border-radius: var(--md-sys-shape-full);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        background: var(--md-sys-color-surface-container-low);
+        color: var(--md-sys-color-on-surface); font: inherit; font-size: 15px;
+      }
+      /* 只允许纵向滚动：overflow-y:auto 会把另一轴算成 auto，一旦子元素宽出一像素
+         就能左右拖。行本身之前是 width:100% + padding 且没开 border-box，正好宽出 24px。 */
+      .ns-sheet-list { max-height: 56vh; overflow-y: auto; overflow-x: hidden;
+        overscroll-behavior: contain; touch-action: pan-y;
+        display: flex; flex-direction: column; gap: 2px; }
+      .ns-sound { box-sizing: border-box; min-width: 0;
+        display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3);
+        border-radius: var(--md-sys-shape-s); background: transparent; border: 0;
+        text-align: start; color: inherit; font: inherit; cursor: pointer; }
+      .ns-sound:hover { background: var(--md-sys-color-surface-container); }
+      .ns-sound[data-current="true"] { background: var(--md-sys-color-secondary-container); }
+      .ns-sound .label { flex: 1; min-width: 0; font-size: 14px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ns-sound .ms { flex-shrink: 0; font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+      /* 试听与使用分开：整行点击只试听，改映射必须点这个按钮 */
+      .ns-use { flex-shrink: 0; border: 0; cursor: pointer; font: inherit;
+        font-size: 12px; font-weight: 500; padding: 6px 12px;
+        border-radius: var(--md-sys-shape-full);
+        background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+      .ns-use:disabled { background: transparent; cursor: default;
+        color: var(--md-sys-color-on-surface-variant); }
+      .ns-play { flex-shrink: 0; width: 36px; height: 36px; border-radius: var(--md-sys-shape-full);
+        border: 0; background: var(--md-sys-color-surface-container-highest); color: inherit;
+        display: grid; place-items: center; cursor: pointer; }
+      .ns-toast {
+        position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(12px);
+        background: var(--md-sys-color-inverse-surface); color: var(--md-sys-color-inverse-on-surface);
+        padding: var(--sp-3) var(--sp-5); border-radius: var(--md-sys-shape-s);
+        font-size: 14px; opacity: 0; pointer-events: none; transition: all .25s;
+        z-index: 40; max-width: 80vw;
+      }
+      .ns-toast[data-show="true"] { opacity: 1; transform: translateX(-50%) translateY(0); }
+      .ns-empty { padding: var(--sp-6); text-align: center; color: var(--md-sys-color-on-surface-variant); }
+    </style>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="app-surface">
+      <div class="ns-bar">
+        <h1>Nintendo Switch 音效<span class="sub" data-sub>正在读取模块状态…</span></h1>
+        <button class="ns-text-button" data-reset disabled>恢复默认</button>
+      </div>
+      <div class="ns-main" data-main></div>
+      <div class="ns-toast" data-toast></div>
+    </div>
+  </body>
+</html>

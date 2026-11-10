@@ -2,93 +2,94 @@
 MODDIR=${0%/*}
 . "$MODDIR/common.sh"
 
-FILES="$MODDIR/files"
+CONF="$MODDIR/data/sounds.conf"
+LIB="$MODDIR/webroot/sounds"
 : > "$LOG"
 log "=== ns-ringtone mount start ==="
+
+[ -f "$CONF" ] || { log "config missing: $CONF"; exit 0; }
+
+: > "$MODDIR/data/missing.list" 2>/dev/null
 
 # Files copied into /data/adb/modules by hand (adb push, unzip) inherit
 # u:object_r:adb_data_file:s0, which no app or system_server may read -- the
 # result is a completely silent phone. Force the label the stock files use.
-chcon -R u:object_r:system_file:s0 "$FILES" 2>/dev/null
+chcon -R u:object_r:system_file:s0 "$LIB" 2>/dev/null
 
-# Bind every replacement file over its original. The originals stay untouched
-# underneath, so removing the module fully restores the stock sounds.
-#
-# ColorOS 17 moved the UI sound set between partitions (the same audio files
-# now live under /my_product/media/audio), so each set lists every location it
-# has shipped in. Directories that do not exist are skipped, and the log records
-# which ones were actually used.
-bound_files=" "
-bound_dirs=""
-total_ok=0
-total_skip=0
-total_fail=0
-
-bind_dir() {
-  _src="$1"
-  _dst="$2"
-  [ -d "$_src" ] || return 1
-  [ -d "$_dst" ] || return 1
-  _ok=0
-  _skip=0
-  _fail=0
-  for _f in "$_src"/*; do
-    [ -f "$_f" ] || continue
-    _n=${_f##*/}
-    _t="$_dst/$_n"
-    case "$bound_files" in *" $_t "*) continue ;; esac
-    if [ ! -e "$_t" ]; then
-      _skip=$((_skip + 1))
-      continue
-    fi
-    chmod 0644 "$_f" 2>/dev/null
-    if mount --bind "$_f" "$_t" 2>/dev/null; then
-      _ok=$((_ok + 1))
-      bound_files="$bound_files$_t "
-    else
-      _fail=$((_fail + 1))
-      log "bind failed: $_t"
-    fi
-  done
-  total_ok=$((total_ok + _ok))
-  total_skip=$((total_skip + _skip))
-  total_fail=$((total_fail + _fail))
-  bound_dirs="$bound_dirs $_dst"
-  log "$_dst -> ok=$_ok skip=$_skip fail=$_fail"
-  return 0
+# Where each group used to live. ColorOS 17 moved the UI set from my_stock to
+# my_product, so every group is probed in order and the first directory that
+# actually holds the target file wins.
+dirs_for() {
+  case "$1" in
+    product_ui)    echo "/my_product/media/audio/ui /product/media/audio/ui" ;;
+    mystock_ui)    echo "/my_product/media/audio/ui /my_stock/media/audio/ui /system/media/audio/ui" ;;
+    notifications) echo "/data/oplus/multimedia/notifications /data/oplus/media/notifications /my_product/media/audio/notifications" ;;
+    *) return 1 ;;
+  esac
 }
 
-bind_group() {
-  _src="$1"
-  shift
-  _used=0
-  for _dst in "$@"; do
-    bind_dir "$_src" "$_dst" && _used=1
+resolve_dir() {
+  for _d in $(dirs_for "$1"); do
+    if [ -e "$_d/$2" ]; then
+      echo "$_d"
+      return 0
+    fi
   done
-  [ "$_used" = "1" ] || log "no target dir for ${_src##*/}"
+  return 1
 }
 
-bind_group "$FILES/product_ui" \
-  /my_product/media/audio/ui \
-  /product/media/audio/ui
+bound=" "
+ok=0
+skip=0
+fail=0
+enabled=0
 
-bind_group "$FILES/mystock_ui" \
-  /my_product/media/audio/ui \
-  /my_stock/media/audio/ui \
-  /system/media/audio/ui
+while IFS= read -r line; do
+  case "$line" in ''|'#'*) continue ;; esac
+  slot=${line%%=*}
+  id=${line#*=}
+  case "$slot" in */*) ;; *) continue ;; esac
+  group=${slot%%/*}
+  target=${slot#*/}
 
-bind_group "$FILES/notifications" \
-  /data/oplus/multimedia/notifications \
-  /data/oplus/media/notifications \
-  /my_product/media/audio/notifications
+  case "$id" in ''|'-')
+    skip=$((skip + 1))
+    continue
+    ;;
+  esac
+  enabled=$((enabled + 1))
+
+  src="$LIB/$id.ogg"
+  if [ ! -f "$src" ]; then
+    skip=$((skip + 1))
+    log "missing sound: $id"
+    continue
+  fi
+
+  if ! dst_dir=$(resolve_dir "$group" "$target"); then
+    skip=$((skip + 1))
+    log "no target for: $slot"
+    printf '%s\n' "$slot" >> "$MODDIR/data/missing.list"
+    continue
+  fi
+
+  dst="$dst_dir/$target"
+  case "$bound" in *" $dst "*) continue ;; esac
+  if mount --bind "$src" "$dst" 2>/dev/null; then
+    ok=$((ok + 1))
+    bound="$bound$dst "
+  else
+    fail=$((fail + 1))
+    log "bind failed: $dst"
+  fi
+done < "$CONF"
 
 # the /data/oplus media dir has its own label in file_contexts
 for _d in /data/oplus/multimedia/notifications /data/oplus/media/notifications; do
   [ -d "$_d" ] && restorecon -R "$_d" 2>/dev/null
 done
 
-log "dirs:$bound_dirs"
-log "total: ok=$total_ok skip=$total_skip fail=$total_fail"
-_first=$(printf '%s' "$bound_files" | awk '{print $1}')
+log "enabled=$enabled ok=$ok skip=$skip fail=$fail"
+_first=$(printf '%s' "$bound" | awk '{print $1}')
 [ -n "$_first" ] && log "label($_first): $(ls -Z "$_first" 2>/dev/null | awk '{print $1}')"
 log "=== done ==="

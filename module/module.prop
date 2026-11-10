@@ -1,6 +1,6 @@
 id=ns-ringtone
 name=Nintendo Switch 音效
-version=v1.2.0
-versionCode=3
+version=v2.0.1
+versionCode=5
 author=yuzlyn
-description=把系统 UI 音效与通知音换成 Nintendo Switch 的原声：按键、锁屏/解锁、截图、充电、低电量、通知。共 139 个音效，全部来自 Switch 固件采样，不做合成。已适配 ColorOS 17 的音频目录迁移。铃声、闹钟、天气提醒、开关机音保持手机原样。
+description=把系统 UI 音效与通知音换成 Nintendo Switch 的原声：内置 213 个可选音效，139 个槽位可在 WebUI 上逐个开关并指定用哪个音效。点一行只试听，点「使用」才保存。全部来自 Switch 固件采样，不做合成。适配 ColorOS 16 / 17。铃声、闹钟、天气提醒、开关机音保持手机原样。
