@@ -25,15 +25,25 @@ exit 0
 [IO.File]::WriteAllText((Join-Path $meta "update-binary"), ($updateBinary -replace "`r`n", "`n"))
 [IO.File]::WriteAllText((Join-Path $meta "updater-script"), "#MAGISK")
 
-Push-Location $src
+# Entries are written by hand so every path uses "/": Windows PowerShell's
+# ZipFile.CreateFromDirectory emits "\", which Android unzip turns into file
+# names containing a literal backslash instead of directories.
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$fs = [IO.File]::Open($out, [IO.FileMode]::Create)
+$zip = [IO.Compression.ZipArchive]::new($fs, [IO.Compression.ZipArchiveMode]::Create)
 try {
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [IO.Compression.ZipFile]::CreateFromDirectory(
-        $src, $out,
-        [IO.Compression.CompressionLevel]::Optimal,
-        $false)
+    $base = (Resolve-Path $src).Path
+    foreach ($f in Get-ChildItem -Recurse -File $base) {
+        $rel = $f.FullName.Substring($base.Length + 1).Replace('\', '/')
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $zip, $f.FullName, $rel, [IO.Compression.CompressionLevel]::Optimal)
+    }
 }
-finally { Pop-Location }
+finally {
+    $zip.Dispose()
+    $fs.Dispose()
+}
 
 $mb = [math]::Round((Get-Item $out).Length / 1MB, 1)
 Write-Output "built: $out ($mb MB)"
