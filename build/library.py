@@ -73,6 +73,11 @@ def build_library():
             skipped.append((name, "silent"))
             continue
         y = dsp.trim(x.copy(), thresh_db=-50.0, pad_ms=4)
+        # 源包里的 none.wav 是 2ms 的空占位，编进库只会多一条听不见的 "none"
+        # 选项。只按文件名剔除，长度过滤会误伤 StartupSleep 这类短音效。
+        if stem.lower() == "none":
+            skipped.append((name, "placeholder"))
+            continue
         y = dsp.normalize_peak(y, ceiling_db=-1.5)
         path = os.path.join(OUT, stem + ".ogg")
         dsp.write_audio(path, y, quality=4)

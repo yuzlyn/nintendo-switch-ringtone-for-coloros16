@@ -7,7 +7,7 @@
 - 适用系统：ColorOS 16 / 17（Android 16 / 17）
 - 实测机型：一加 13（ColorOS 16 / 17）
 - 权限要求：KernelSU / Magisk / APatch 任一
-- 音效库：213 个可选音效（205 个固件采样 + 8 个合成音）
+- 音效库：212 个可选音效（204 个固件采样 + 8 个合成音）
 - 替换槽位：139 个，可逐个开关
 
 ## 特性
@@ -15,7 +15,7 @@
 内置 WebUI，不用改配置、不用重刷模块：
 
 - **逐个槽位开关**：139 个槽位每个都有独立开关，关掉就保持手机原声
-- **自由指定音效**：任意槽位都可以从 213 个音效里挑，不再是一对一写死
+- **自由指定音效**：任意槽位都可以从 212 个音效里挑，不再是一对一写死
 - **点行试听 / 点「使用」保存**：试听和保存是两个动作，误触不会改掉已选音效
 - **恢复默认**：一键回到出厂映射
 - 改动保存后重启生效，界面会提示
@@ -108,7 +108,7 @@ module/                     可刷入的模块内容
   data/sounds.conf          当前映射（<组>/<目标文件>=<音效 id>，"-" 表示保持原声）
   data/sounds.default.conf  默认映射，供「恢复默认」使用
   webroot/                  WebUI（index.html / app.js / styles.css / theme.css）
-  webroot/sounds/           213 个可选音效 + index.tsv 清单
+  webroot/sounds/           212 个可选音效 + index.tsv 清单
   webroot/cgi-bin/exec      浏览器访问时的 CGI 执行入口
 build/                      音频生成脚本（需要下面的音效源才能重新构建）
 tools/pack.ps1              打包成 zip
@@ -149,7 +149,7 @@ pwsh tools/pack.ps1
 
 ## 音效来源与版权
 
-- 音效来自 [TOM-BadEN/Nintendo-Switch-Sounds-Effect](https://github.com/TOM-BadEN/Nintendo-Switch-Sounds-Effect)，由 Switch 固件音频提取整理。该包 211 个文件中 205 个含有效波形，其余 6 个为静音。
+- 音效来自 [TOM-BadEN/Nintendo-Switch-Sounds-Effect](https://github.com/TOM-BadEN/Nintendo-Switch-Sounds-Effect)，由 Switch 固件音频提取整理。该包 211 个文件中 204 个可用（205 个含有效波形，其中 1 个是 2ms 的空占位），其余 6 个为静音。
 - Nintendo Switch 及相关音效的著作权属于任天堂。本模块仅供个人学习与自用，请勿用于商业用途或二次分发牟利。
 
 ## 更新日志
@@ -164,7 +164,7 @@ pwsh tools/pack.ps1
 ### v2.0.0
 
 - 新增 WebUI（Material 3 风格，与字体模块同一套设计层）。
-- 音效打包成 213 个可选音效库，139 个槽位可在界面上逐个开关并自由指定音效。
+- 音效打包成 212 个可选音效库，139 个槽位可在界面上逐个开关并自由指定音效。
 - 新增 `tools/soundctl.sh` 作为 WebUI 后端，`post-fs-data.sh` 改为按 `data/sounds.conf` 逐槽位挂载。
 - 新增 `service.sh` 提供本地 WebUI 服务（`127.0.0.1:7127`）。
 - 移除被音效库取代的固定产物目录 `files/`。
